@@ -2,7 +2,7 @@ package com.iot.device
 
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior, PostStop, Signal}
-import com.iot.device.IotDevice.{IotDeviceMessage, MeasurementRecorded, MeasurementResult, ReadMeasurement, UpdateMeasurement}
+import com.iot.device.IotDevice.{IotDeviceMessage, MeasurementRecorded, MeasurementResult, Passivate, ReadMeasurement, UpdateMeasurement}
 
 
 class IotDevice(context: ActorContext[IotDeviceMessage],groupId: String, deviceId: String) extends AbstractBehavior[IotDeviceMessage] {
@@ -25,6 +25,9 @@ class IotDevice(context: ActorContext[IotDeviceMessage],groupId: String, deviceI
                  else
                      replyTo ! MeasurementResult(requestId,None)
                  this
+
+            case Passivate =>
+                Behaviors.stopped
         }
 
     override def onSignal: PartialFunction[Signal, Behavior[IotDeviceMessage]] = {
@@ -47,5 +50,8 @@ object IotDevice {
     sealed trait IotDeviceResponse
     final case class MeasurementResult(requestId: Long, value: Option[Double]) extends IotDeviceResponse
     final case class MeasurementRecorded(requestId: Long) extends IotDeviceResponse
+
+    case object Passivate extends IotDeviceMessage
+
 }
 

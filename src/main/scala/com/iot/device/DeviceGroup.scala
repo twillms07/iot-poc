@@ -3,7 +3,7 @@ package com.iot.device
 import akka.actor.typed.{ActorRef, Behavior, PostStop, Signal}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import com.iot.device.DeviceGroup.DeviceGroupMessage
-import com.iot.device.DeviceManager.DeviceManagerMessage
+import com.iot.device.DeviceManager.{DeviceRegistered, ReplyDeviceList, RequestDeviceList, RequestTrackDevice}
 import com.iot.device.IotDevice.IotDeviceMessage
 
 class DeviceGroup(context: ActorContext[DeviceGroupMessage], groupId: String) extends AbstractBehavior[DeviceGroup.DeviceGroupMessage] {
@@ -30,6 +30,19 @@ class DeviceGroup(context: ActorContext[DeviceGroupMessage], groupId: String) ex
             case RequestTrackDevice(gId, _, _) =>
                 context.log.warning("Ignoring TrackDevice request for {}. This actor is responsible for {}.", gId, groupId)
                 this
+
+            case RequestDeviceList(requestId, gId, replyTo) =>
+                if (gId == groupId) {
+                    replyTo ! ReplyDeviceList(requestId, deviceIdToActor.keySet)
+                    this
+                } else
+                    Behaviors.unhandled
+
+            case DeviceTerminated(_, _, deviceId) =>
+                context.log.info("Device actor for {} has been terminated", deviceId)
+                deviceIdToActor -= deviceId
+                this
+
         }
 
     override def onSignal: PartialFunction[Signal, Behavior[DeviceGroupMessage]] = {
@@ -42,11 +55,6 @@ class DeviceGroup(context: ActorContext[DeviceGroupMessage], groupId: String) ex
 object DeviceGroup {
 
     trait DeviceGroupMessage
-    final case class RequestTrackDevice(groupId: String, deviceId: String, replyTo: ActorRef[DeviceRegistered])
-        extends DeviceManagerMessage with DeviceGroupMessage
-
-    final case class DeviceRegistered(device: ActorRef[IotDeviceMessage])
-
     private final case class DeviceTerminated(device: ActorRef[IotDeviceMessage], groupId: String, deviceId: String)
         extends DeviceGroupMessage
 

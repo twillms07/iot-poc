@@ -1,8 +1,7 @@
-package com.iot
+package com.iot.device
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
-import com.iot.device.IotDevice
-import com.iot.device.IotDevice.{IotDeviceResponse, MeasurementRecorded, MeasurementResult, ReadMeasurement, UpdateMeasurement}
+import com.iot.device.IotDevice._
 import org.scalatest.WordSpecLike
 
 class IotDeviceSpec extends ScalaTestWithActorTestKit with WordSpecLike {
